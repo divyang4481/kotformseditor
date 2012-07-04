@@ -1,0 +1,162 @@
+z<?xml version="1.0" encoding="utf-8"?>
+<mx:Panel xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="100%" height="100%" 
+	implements="kotforms.UiPalette" initialize="init()">
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Label;
+			import mx.containers.HBox;
+			import mx.controls.ComboBox;
+			import mx.core.Application;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import mx.collections.ArrayCollection;
+		
+			[Bindable]
+			private var _dataGrid:DataGrid;
+			
+			private var _cols:ArrayCollection;
+			
+			private function init():void
+			{
+				_cols = new ArrayCollection();
+			}
+		
+			private function showAddDialog():void
+			{
+				var myWin:TitleWindow
+				= new TitleWindow();
+				myWin.setStyle("horizontalAlign","center");
+				myWin.showCloseButton = true;
+				myWin.addEventListener(CloseEvent.CLOSE,function(event:Event):void{
+					PopUpManager.removePopUp(myWin);
+				});
+				myWin.layout="vertical";	
+				
+				var hbox1:HBox
+				= new HBox();
+				myWin.addChild(hbox1);
+				
+				var codeTxtLbl:Label = new Label();
+				codeTxtLbl.text = "Header:";
+				hbox1.addChild(codeTxtLbl);
+				
+				var headerText:TextInput = new TextInput();
+				hbox1.addChild(headerText);
+				
+				
+				var hbox2:HBox
+				= new HBox();
+				myWin.addChild(hbox2);
+				
+				var valTxtLbl:Label = new Label();
+				valTxtLbl.setStyle("textAlign","right");
+				valTxtLbl.text = "Datatype:";
+				hbox2.addChild(valTxtLbl);
+				
+				var dataTypeCmb:ComboBox = new ComboBox();
+				dataTypeCmb.dataProvider = new ArrayCollection(["String","Date","Numeric","True/False"]);
+				hbox2.addChild(dataTypeCmb);
+
+				var hbox3:HBox
+				= new HBox();
+				myWin.addChild(hbox3);
+				
+				var colNameLbl:Label = new Label();
+				colNameLbl.setStyle("textAlign","right");
+				colNameLbl.text = "Unique name:";
+				hbox3.addChild(colNameLbl);
+				
+				var colNameTxt:TextInput = new TextInput();
+				hbox3.addChild(colNameTxt);
+				
+				var okBtn:Button = new Button();
+				okBtn.label = "Ok";
+				okBtn.addEventListener(MouseEvent.CLICK,function(event:Event):void
+				{
+					var addedItem:ChoicePickData = new ChoicePickData();
+					addedItem.headerText = headerText.text;
+					addedItem.columnType = dataTypeCmb.selectedItem;
+					addedItem.colName = colNameTxt.text;
+					
+					var dgc:DataGridColumn = new DataGridColumn(addedItem.colName);
+					dgc.headerText = addedItem.headerText;
+					
+					
+					_cols.addItem(addedItem);
+					PopUpManager.removePopUp(myWin);
+				},false,0,true);
+				myWin.addChild(okBtn);
+				
+				PopUpManager.addPopUp(myWin,this,true);
+				PopUpManager.centerPopUp(myWin);			
+			}
+		
+			private function deletePickValue():void
+			{
+				if(cols.selectedIndex >= 0)
+				{
+					_cols.removeItemAt(cols.selectedIndex);
+				}
+			}		
+		
+			public function set kotformsUiComponent(uiComp:UIComponent):void
+			{
+				_dataGrid = uiComp as DataGrid;
+				_cols.removeAll();
+				
+				var uiCompProps:Object = Application.application.dataForDesigner[uiComp];
+				
+				if(uiCompProps==null)
+				{
+					Application.application.dataForDesigner[uiComp] = {};
+					
+					uiCompProps = Application.application.dataForDesigner
+				}
+				
+				if(uiCompProps.cols!=null)
+				{
+					uiCompProps.cols = new ArrayCollection();
+				}
+				
+				_cols = uiCompProps.cols as ArrayCollection;
+			}
+			
+			private function getDataType(dgc:DataGridColumn):String
+			{
+				var str:String = "String";
+				
+			
+				
+				return str;
+			}
+			
+			public function get kotformsUiComponent():UIComponent
+			{
+				return _dataGrid;
+			}			
+			
+			private function getDataGridName(comp:DataGrid):String
+			{
+				return _dataGrid==null?"":_dataGrid.name;
+			}
+		]]>
+	</mx:Script>
+	<mx:Binding source="name.text" destination="_dataGrid.name"/>
+	<mx:Form>
+		<mx:FormItem label="Name">
+			<mx:TextInput id="name" text="{getDataGridName(_dataGrid)}"/>
+		</mx:FormItem>
+		<mx:FormItem label="Columns" direction="vertical">
+			<mx:HBox>
+				<mx:Button id="addCol" label="Add Column" click="showAddDialog()"/>
+				<mx:Button id="delCol" label="Delete" click="deletePickValue()"/>
+			</mx:HBox>
+			<mx:DataGrid id="cols" dataProvider="{_cols}">
+				<mx:columns>
+					<mx:DataGridColumn dataField="headerText" headerText="Column Name"/>
+					<mx:DataGridColumn dataField="columnType" headerText="Data Type"/>
+					<mx:DataGridColumn dataField="colName" headerText="Unique name"/>
+				</mx:columns>
+			</mx:DataGrid>
+		</mx:FormItem>
+	</mx:Form>
+</mx:Panel>

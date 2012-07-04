@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DropdownDesigner xmlns="kotforms.*" xmlns:mx="http://www.adobe.com/2006/mxml">
+	<mx:Script>
+		<![CDATA[
+			import mx.core.Application;
+			import mx.controls.List;			
+			import mx.core.UIComponent;
+			import mx.binding.utils.ChangeWatcher;
+			import mx.binding.utils.BindingUtils;
+			import mx.collections.ArrayCollection;
+			import mx.containers.GridItem;
+			
+			
+			override public function set kotformsUiComponent(uiComp:UIComponent):void
+			{
+				super.kotformsUiComponent = uiComp;
+				var list:List = uiComp as List;
+				if(list!=null)
+				{
+					if(list.dataProvider==null)
+					{
+						list.dataProvider = new ArrayCollection();
+						
+					}
+					list.labelField = "picklabel";
+					pickData = list.dataProvider as ArrayCollection;
+					uiControlName = list.name;
+				}
+				
+			}
+			
+		]]>
+	</mx:Script>
+	
+	<mx:Binding source="uiControlName" destination="kotformsUiComponent.name"/>
+	
+</DropdownDesigner>

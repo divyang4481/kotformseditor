@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Grid xmlns:mx="http://www.adobe.com/2006/mxml" verticalScrollPolicy="auto"
+	dragEnter="gridShouldAccept(event)" 
+	dragDrop="gridAddToCell(event)">
+	<mx:Script>
+		<![CDATA[
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import mx.controls.LinkButton;
+			import mx.managers.DragManager;
+			import mx.controls.Button;
+			import mx.controls.TextInput;
+			import mx.managers.PopUpManager;
+			import mx.containers.TitleWindow;
+			import mx.events.CloseEvent;
+			import mx.containers.FormItem;
+			import mx.core.UIComponent;
+			import mx.containers.FormHeading;
+			import mx.containers.Form;
+			import mx.containers.HBox;
+			import mx.events.DragEvent;
+			
+
+
+			private var _activeForm:Form = null;
+			
+			private var _activeGridRow:GridRow = null;
+			
+			private function  childrenAtPoint(p:Point,f:Function):void
+			{
+				var arr:Array = stage.getObjectsUnderPoint(p);
+				if(arr!=null && arr.length>0)
+				{
+					var itm:Object = arr[arr.length-1];
+					//for each(var itm:Object in arr)
+					//{
+						var o:Object = itm;
+						var b:Boolean = f(o);
+						if(b)
+						{
+							//break;
+						}
+						else
+						{
+							while(o!=null && o.hasOwnProperty("parent"))
+							{
+								o = o.parent;
+								if(o!=null)
+								{
+									b = f(o);
+									if(b)
+									{
+										break;
+									}
+								}
+							}
+							if(b)
+							{
+								//break;
+							}							
+						}
+					//}
+				}
+			}
+			
+			
+			private function gridShouldAccept(event:DragEvent):void
+			{
+				trace("Entered vBoxShouldAccept");
+				trace("stageX = "+event.stageX);
+				trace("stageY = "+event.stageY);
+				
+				var b:Boolean = event.dragSource.hasFormat('dragClass') ;
+				trace("has format is "+b);
+				if(b)
+				{
+					var clazz:Class = event.dragSource.dataForFormat('dragClass') as Class;
+								
+					
+					childrenAtPoint(new Point(event.stageX,event.stageY),function(o:Object):Boolean
+					{
+						if(o is GridRow)
+						{
+							_activeGridRow = o as GridRow;
+						}
+						else if(o is Form)
+						{
+							_activeForm = o as Form;
+						}
+						
+						return false;
+					});									
+					
+
+										
+					if(_activeGridRow==null && _activeForm==null)
+					{
+						b = clazz==GridRow;
+					}	
+					else if(_activeGridRow!=null && _activeForm==null)
+					{
+						b = clazz==Form || clazz==GridRow;
+						if(clazz==GridRow)
+						{
+							_activeGridRow = null;//act like a new row
+						}
+					}				
+					else if(_activeForm!=null)
+					{
+						b = !(clazz==GridRow || clazz==Form);
+					}				
+				}
+
+				if(b)
+				{
+					DragManager.acceptDragDrop(event.currentTarget as UIComponent);
+				}
+				trace("Exited vBoxShouldAccept");
+			}
+			
+			private function gridAddToCell(event:DragEvent):void
+			{
+				
+				var gridItem:GridItem = null;
+				var form:Form = null;
+				if(_activeGridRow==null)
+				{
+					height = height + 200;
+					trace("Adding GridRow");
+					var gridRow:GridRow = new GridRow();
+					gridRow.percentWidth = 100;
+					gridRow.percentHeight = 50;
+					gridRow.setStyle('paddingTop','0');
+					gridRow.setStyle('paddingBottom','0');
+					gridRow.setStyle('paddingLeft','0');
+					gridRow.setStyle('paddingRight','0');				
+					gridRow.setStyle('backgroundColor','yellow');
+					addChild(gridRow);
+					
+					gridItem = new GridItem();
+					gridItem.percentWidth = 100;
+					gridItem.percentHeight = 100;
+					gridItem.setStyle('paddingTop','0');
+					gridItem.setStyle('paddingBottom','0');
+					gridItem.setStyle('paddingLeft','0');
+					gridItem.setStyle('paddingRight','0');
+					gridRow.addChild(gridItem);
+					
+					
+					_activeGridRow = null;
+					_activeForm = null;
+					
+					//gridItem.addEventListener(MouseEvent.MOUSE_OVER,setActiveCell);
+					//gridItem.addEventListener(MouseEvent.MOUSE_OUT,unsetActiveCell);
+
+				}
+				else if(_activeGridRow != null && _activeForm==null)
+				{
+					trace("Adding Form");
+					form = new Form();
+					form.percentWidth = 30;
+					form.minWidth = 20;
+					form.percentHeight = 100;
+					form.setStyle('borderStyle','solid');
+					form.setStyle('backgroundColor','cyan');
+					//.addEventListener(MouseEvent.MOUSE_OVER,setActiveCell);
+					//form.addEventListener(MouseEvent.MOUSE_OUT,unsetActiveCell);
+					
+					var formHeading:FormHeading = new FormHeading();
+					formHeading.percentWidth = 100;
+					formHeading.label = "Edit Form Heading";
+					formHeading.addEventListener(MouseEvent.CLICK,function(event:MouseEvent):void
+					{
+						var myWin:TitleWindow
+						= new TitleWindow();
+						myWin.showCloseButton = true;
+						myWin.addEventListener(CloseEvent.CLOSE,function(event:CloseEvent):void{
+							PopUpManager.removePopUp(myWin);
+						});
+						myWin.layout="horizontal";
+								
+						var txt:TextInput = new TextInput();
+						myWin.addChild(txt);		
+								
+						var okBtn:Button = new Button();
+						okBtn.label= "Ok";
+						okBtn.addEventListener(MouseEvent.CLICK,function(event:Event):void
+						{
+							formHeading.label = txt.text;
+							PopUpManager.removePopUp(myWin);
+						});
+						myWin.addChild(okBtn);
+						
+						PopUpManager.addPopUp(myWin,formHeading,true);
+						PopUpManager.centerPopUp(myWin);		
+						
+					});
+					
+					form.addChild(formHeading);
+					
+					gridItem = _activeGridRow.getChildAt(0) as GridItem;
+					gridItem.addChild(form);
+					_activeGridRow = null;
+					_activeForm = null;
+				}
+				else if(_activeForm !=null)
+				{
+					trace("Form found, adding Object");
+					form = _activeForm;
+					var clazz:Class = event.dragSource.dataForFormat('dragClass') as Class;
+					var displayObj:UIComponent = new clazz() as UIComponent;
+					if(displayObj!=null)
+					{
+						//form = event.currentTarget as Form;
+						
+						var formItem:FormItem = new FormItem();
+						formItem.direction="horizontal";
+						formItem.label = "Edit Label for";
+						formItem.addChild(displayObj);
+	
+						var delBtn:LinkButton = new LinkButton();
+						delBtn.label="Delete";
+						delBtn.addEventListener(MouseEvent.CLICK,function(evt:MouseEvent):void
+						{
+							form.removeChild(formItem);
+						});
+						formItem.addChild(delBtn);
+						
+						form.addChild(formItem);
+						
+						formItem.itemLabel.addEventListener(MouseEvent.CLICK,function(event:MouseEvent):void
+						{
+							var myWin:TitleWindow
+							= new TitleWindow();
+							myWin.showCloseButton = true;
+							myWin.addEventListener(CloseEvent.CLOSE,function(event:CloseEvent):void{
+								PopUpManager.removePopUp(myWin);
+							});
+							myWin.layout="horizontal";
+									
+							var txt:TextInput = new TextInput();
+							myWin.addChild(txt);		
+									
+							var okBtn:Button = new Button();
+							okBtn.label= "Ok";
+							okBtn.addEventListener(MouseEvent.CLICK,function(event:Event):void
+							{
+								formItem.label = txt.text;
+								PopUpManager.removePopUp(myWin);
+							});
+							myWin.addChild(okBtn);
+							
+							PopUpManager.addPopUp(myWin,formItem,true);
+							PopUpManager.centerPopUp(myWin);		
+						});
+					}
+					_activeGridRow = null;
+					_activeForm = null;
+					
+				}
+				
+			}
+		]]>
+	</mx:Script>
+
+</mx:Grid>

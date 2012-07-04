@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" initialize="init()">
+	<mx:Script>
+		<![CDATA[
+			import mx.containers.Grid;
+			import eduerp.forms.ui.KotFormFactory;
+			private function init():void
+			{
+				var myXml:XML
+				= <kotform title="Undergraduate application for admission (Point Park University)" version="0.2" name="undergradapp">
+  <processing-instructions>
+    <aftersave disable="false">
+      <reload reloadmethod="saveurl"/>
+    </aftersave>
+  </processing-instructions>
+  <kotformsection kotorder="1" label="Applicant Details">
+    <kottextinput text="Ananth" name="firstName" label="First name"/>
+    <kottextinput text="Raghuraman" name="lastName" label="Last name"/>
+    <kotcombobox selectedcode="F" name="gender" label="Gender">
+      <pickvalue code="M" label="Male"/>
+      <pickvalue code="F" label="Female"/>
+      <pickvalue code="U" label="Unknown"/>
+    </kotcombobox>
+    <kotdatefield name="dateOfBirth" defaultdate="Wed Apr 10 1991" label="Date of birth"/>
+    <kotcheckbox selected="true" name="previousStudentFlag" label="Previous student?"/>
+    <kottextinput text="2001" name="previousStudentDate" label="If Yes, which year"/>
+  </kotformsection>
+  <kotformsection kotorder="2" label=""/>
+  <kotformsection kotorder="3" label="Address">
+    <kottextinput text="" name="street" label="House and street"/>
+    <kottextinput text="" name="city" label="City"/>
+    <kotcombobox selectedcode="QC" name="state" label="State or province">
+      <pickvalue code="ON" label="Ontario"/>
+      <pickvalue code="QC" label="Quebec"/>
+      <pickvalue code="BC" label="British Columbia"/>
+    </kotcombobox>
+    <kotcombobox selectedcode="CA" name="country" label="Country">
+      <pickvalue code="US" label="USA"/>
+      <pickvalue code="CA" label="Canada"/>
+      <pickvalue code="IN" label="India"/>
+    </kotcombobox>
+    <kotdatefield name="addressValidityEndDate" defaultdate="Wed Apr 24 1991" label="Valid until"/>
+  </kotformsection>
+  <kotformsection kotorder="4" label="Proposed Degree">
+    <kotcombobox selectedcode="MBAHR" name="proposedProgram" label="Proposed program">
+      <pickvalue code="MS" label="MS in Management"/>
+      <pickvalue code="MBAFIN" label="MBA in Finance"/>
+      <pickvalue code="MBAHR" label="MBA in Human Resources"/>
+      <pickvalue code="MBAOG" label="MBA in Oil and Gas"/>
+      <pickvalue code="MBAIT" label="MBA in Information Technology"/>
+    </kotcombobox>
+    <kotcombobox selectedcode="FA2012" name="term" label="Label for">
+      <pickvalue code="SP2012" label="Spring 2012"/>
+      <pickvalue code="FA2012" label="Fall 2012"/>
+    </kotcombobox>
+    <kotmultipleselectlist name="campusLocation" label="Campus location">
+      <pickvalue code="TO" label="Toronto" selected="undefined"/>
+      <pickvalue code="WLOO" label="Waterloo" selected="undefined"/>
+      <pickvalue code="HAM" label="Hamilton" selected="true"/>
+      <pickvalue code="AJ" label="Ajax" selected="true"/>
+      <pickvalue code="PCK" label="Pickering" selected="undefined"/>
+    </kotmultipleselectlist>
+  </kotformsection>
+</kotform>
+
+;
+
+				var g:Grid = KotFormFactory.instance().createGrid(myXml);
+				g.percentHeight=100;
+				g.percentWidth=100;
+				addChild(g);
+				validateDisplayList();
+				
+				
+				trace("disableScreenAfterSave = "+myXml.elements("processing-instructions")[0].aftersave[0].@disable);
+			
+				
+				trace("reloadmethod = " + myXml.elements("processing-instructions")[0].aftersave[0].reload[0].@reloadmethod);				
+				
+			}
+		]]>
+	</mx:Script>
+</mx:Application>
