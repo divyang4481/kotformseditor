@@ -185,9 +185,9 @@
 					gridItem1.percentWidth=50;
 					gridItem1.percentHeight=100;
 					if(i==0)
-						gridItem1.setStyle('backgroundColor','yellow');
+						gridItem1.setStyle('backgroundColor','#FFCC66');
 					else
-						gridItem1.setStyle('backgroundColor','cyan');
+						gridItem1.setStyle('backgroundColor','#FFCC66');
 					gridItem1.addEventListener(DragEvent.DRAG_ENTER,dragEnterHandler);
 					gridItem1.addEventListener(DragEvent.DRAG_DROP,dragDropHandler);
 					
