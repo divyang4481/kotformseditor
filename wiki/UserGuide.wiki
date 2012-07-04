@@ -1,0 +1,5 @@
+#summary How to use KotFormsEditor
+
+= Introduction =
+
+KotFormsEditor is a Flash based Form creation tool. It is a Work In progress. As of now, it is able to create basic forms and save them in an Xml format. You can drag and drop dropdown lists, plain lists, checkboxes, text fields, labels, radio buttons etc, edit their attributes or delete them. Once done with form creation, the forms allows for saving if you provide a Http address. It does a Http Post. Make sure the Form Swf is loaded from the same Url. Just download the trunk source into your own project and hit the run button
