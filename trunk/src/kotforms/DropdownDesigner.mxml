@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Panel xmlns:mx="http://www.adobe.com/2006/mxml" 
+	layout="vertical" width="100%" height="100%"
+	paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0"
+	initialize="init()"
+	implements="kotforms.UiPalette">
+
+	<mx:Script>
+		<![CDATA[
+			import mx.core.UIComponent;
+			import mx.utils.ObjectUtil;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.http.HTTPService;
+			import mx.binding.utils.BindingUtils;
+			import mx.containers.GridItem;
+			import mx.events.CollectionEvent;
+			import mx.controls.Label;
+			import mx.containers.HBox;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.controls.Button;
+			import mx.controls.TextInput;
+			import mx.containers.TitleWindow;
+			import mx.collections.ArrayCollection;
+			
+			[Bindable]
+			public var pickData:ArrayCollection;
+			
+			[Bindable]
+			public var codeIsEditable:Boolean;
+			
+			[Bindable]
+			public var codeColumnHeader:String
+			
+			[Bindable]
+			public var labelColumnHeader:String;
+			
+			[Bindable]
+			public var labelIsEditable:Boolean;
+			
+			
+			[Bindable]
+			public var uiControlName:String;
+			
+			[Bindable]
+			private var _uiComponent:UIComponent;
+			
+//			[Bindable]
+//			private var _cell:GridItem;
+			
+			private var populationRequest:HTTPService;
+		
+			private function init():void
+			{
+				if(pickData==null)
+				{
+				
+					pickData = new ArrayCollection();
+				}
+				else
+				{
+					trace("pickData is not null. Probably a checkbox designer");
+				}
+				
+//				BindingUtils.bindSetter(horizontalPlacementChanged,horizontalPlacement,"selectedItem");
+//				BindingUtils.bindSetter(verticalPlacementChanged,verticalPlacement,"selectedItem");
+				
+			}		
+			
+			public function set kotformsUiComponent(uiComp:UIComponent):void
+			{
+				_uiComponent = uiComp;
+			}
+			
+			public function get kotformsUiComponent():UIComponent
+			{
+				return _uiComponent;
+			}
+
+			private function populateFromUrl():void
+			{
+				trace("Inside DropdownDesigner::populateFromUrl");
+				/*
+					Sample format:
+					<picklist>
+						<pickvalue code="32772" label="MBA - Health Mgt"/>
+						<pickvalue code="32773" label="MBA - Finance"/>
+						<pickvalue code="32774" label="MBA - Operations Research"/>
+						<pickvalue code="32770" label="MS"/>
+						<pickvalue code="32775" label="MBA - Manufacturing"/>
+						<pickvalue code="32777" label="MBA - Human Resources"/>
+						<pickvalue code="32776" label="MBA - Oil and Gas"/>
+					</picklist>				
+				*/
+			    populationRequest = new HTTPService();
+			    populationRequest.resultFormat = 'e4x';
+			    populationRequest.method = 'GET';
+			    populationRequest.useProxy = false;
+			    populationRequest.addEventListener(ResultEvent.RESULT, processLoadLookups);
+			    populationRequest.addEventListener(FaultEvent.FAULT, processHttpFaultEvent);
+			    populationRequest.url = populationUrl.text;		
+			    populationRequest.send();
+			    trace("Exiting DropdownDesigner::populateFromUrl");	    			
+				
+			}
+			
+			private function processLoadLookups(resultEvent:ResultEvent):void
+			{
+				trace("Entering DrodownDesigner::processLoadLookups");
+				var pickXml:XML = resultEvent.result as XML;
+				trace("Received lookup xml:");
+				trace(pickXml.toXMLString());
+				for each(var pickVal:XML in pickXml.pickvalue)
+				{
+					var addedItem:ChoicePickData
+					= new ChoicePickData();
+					
+					addedItem.pickcode = ObjectUtil.toString(pickVal.@code);
+					addedItem.picklabel = ObjectUtil.toString(pickVal.@label);
+					
+					pickData.addItem(addedItem);
+				}
+				trace("Exiting DropdownDesigner::processLoadLookups");
+			}
+			
+			private function processHttpFaultEvent(faultEvent:FaultEvent):void
+			{
+				trace(faultEvent.fault.faultString);
+			}
+			
+			private function showAddDialog():void
+			{
+				var myWin:TitleWindow
+				= new TitleWindow();
+				myWin.setStyle("horizontalAlign","center");
+				myWin.showCloseButton = true;
+				myWin.addEventListener(CloseEvent.CLOSE,function(event:Event):void{
+					PopUpManager.removePopUp(myWin);
+				});
+				myWin.layout="vertical";	
+				
+				var hbox1:HBox
+				= new HBox();
+				myWin.addChild(hbox1);
+				
+				var codeTxtLbl:Label = new Label();
+				codeTxtLbl.text = "Code:";
+				hbox1.addChild(codeTxtLbl);
+				
+				var codeTxt:TextInput = new TextInput();
+				hbox1.addChild(codeTxt);
+				
+				
+				var hbox2:HBox
+				= new HBox();
+				myWin.addChild(hbox2);
+				
+				var valTxtLbl:Label = new Label();
+				valTxtLbl.setStyle("textAlign","right");
+				valTxtLbl.text = "Label:";
+				hbox2.addChild(valTxtLbl);
+				
+				var valTxt:TextInput = new TextInput();
+				hbox2.addChild(valTxt);
+				
+				var okBtn:Button = new Button();
+				okBtn.label = "Ok";
+				okBtn.addEventListener(MouseEvent.CLICK,function(event:Event):void
+				{
+					//pickData.addItem({"pickcode":codeTxt.text,"picklabel":valTxt.text});
+					var addedItem:ChoicePickData = new ChoicePickData();
+					addedItem.pickcode = codeTxt.text;
+					addedItem.picklabel = valTxt.text;
+					pickData.addItem(addedItem);
+					PopUpManager.removePopUp(myWin);
+				},false,0,true);
+				myWin.addChild(okBtn);
+				
+				PopUpManager.addPopUp(myWin,this,true);
+				PopUpManager.centerPopUp(myWin);			
+			}
+			
+			private function deletePickValue():void
+			{
+				if(pickGrid.selectedIndex >= 0)
+				{
+					pickData.removeItemAt(pickGrid.selectedIndex);
+				}
+			}
+			
+//			public function verticalPlacementChanged(newVal:String):void
+//			{
+//				if(_cell!=null)
+//				{
+//					_cell.setStyle("verticalAlign",newVal);
+//				}
+//			}
+//			
+//			public function horizontalPlacementChanged(newVal:String):void
+//			{
+//				if(_cell!=null)
+//				{
+//					_cell.setStyle("horizontalAlign",newVal);
+//				}
+//			}
+//			
+//			private function getHorizontalPlacementIndex(gi:GridItem):int
+//			{
+//				var horStyle:String
+//				= gi.getStyle("horizontalAlign");
+//				var ndx:int = 0;
+//				if(horStyle=="center")
+//				{
+//					ndx = 0;
+//				}
+//				else if(horStyle=="left")
+//				{
+//					ndx = 1;	
+//				}
+//				else if(horStyle=="right")
+//				{
+//					ndx = 2;
+//				}
+//				
+//				return ndx;
+//			}
+//			
+//			private function getVerticalPlacementIndex(gi:GridItem):int
+//			{
+//				var verStyle:String
+//				= gi.getStyle("verticalAlign");
+//				
+//				var ndx:int = 0;
+//				
+//				if(verStyle=="middle")
+//				{
+//					ndx = 0;
+//				}
+//				else if(verStyle=="top")
+//				{
+//					ndx = 1;
+//				}
+//				else if(verStyle=="bottom")
+//				{
+//					ndx = 2;
+//				}
+//				
+//				return ndx;
+//			}
+			
+		]]>
+	</mx:Script>
+	
+	<mx:Binding source="uiObjName.text" destination="uiControlName"/>
+	
+	<mx:HBox paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0">
+		<mx:Button label="Add" click="showAddDialog()"/>
+		<mx:Button label="Delete" click="deletePickValue()"/>
+	</mx:HBox>
+	<mx:DataGrid id="pickGrid" dataProvider="{pickData}">
+		<mx:columns>
+			<mx:DataGridColumn headerText="{codeColumnHeader}" dataField="pickcode" editable="{codeIsEditable}"/>
+			<mx:DataGridColumn headerText="{labelColumnHeader}" dataField="picklabel" editable="{labelIsEditable}"/>
+		</mx:columns>
+	</mx:DataGrid>
+	<mx:HBox paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0">
+		<mx:TextInput id="populationUrl"/>
+		<mx:Button label="Populate from this Url" click="populateFromUrl()"/>
+	</mx:HBox>
+	<mx:Form>
+		<mx:FormItem label="Name">
+			<mx:TextInput id="uiObjName" text="{uiControlName}"/>
+		</mx:FormItem>
+		<!--mx:FormItem label="Horizontal Placement">
+			<mx:ComboBox id="horizontalPlacement" selectedIndex="{getHorizontalPlacementIndex(_cell)}">
+				<mx:dataProvider>
+					<mx:ArrayCollection>
+						<mx:String>center</mx:String>
+						<mx:String>left</mx:String>
+						<mx:String>right</mx:String>
+					</mx:ArrayCollection>
+				</mx:dataProvider>
+			</mx:ComboBox>
+		</mx:FormItem>
+		<mx:FormItem label="Vertical Placement">
+			<mx:ComboBox id="verticalPlacement" selectedIndex="{getVerticalPlacementIndex(_cell)}">
+				<mx:dataProvider>
+					<mx:ArrayCollection>
+						<mx:String>middle</mx:String>
+						<mx:String>top</mx:String>
+						<mx:String>bottom</mx:String>
+					</mx:ArrayCollection>
+				</mx:dataProvider>
+			</mx:ComboBox>
+		</mx:FormItem>	
+		<mx:FormItem label="percent height">
+			<mx:TextInput id="heightPercent"/>
+		</mx:FormItem>
+		<mx:FormItem label="percent width">
+			<mx:TextInput id="widthPercent"/>
+		</mx:FormItem>
+		<mx:FormItem label="container height">
+			<mx:TextInput id="containerHeight"/>
+		</mx:FormItem-->
+	</mx:Form>
+</mx:Panel>

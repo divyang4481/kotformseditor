@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DropdownDesigner xmlns="kotforms.*" xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" initialize="init()">
+	<mx:Script>
+		<![CDATA[
+			import mx.core.UIComponent;
+			import mx.binding.utils.ChangeWatcher;
+			import mx.containers.GridItem;
+			import mx.binding.utils.BindingUtils;
+			import mx.collections.ArrayCollection;
+			import mx.controls.ComboBase;
+			import mx.events.CollectionEventKind;
+			import mx.events.CollectionEvent;
+			import mx.controls.ComboBox;
+			
+//			[Bindable]
+//			protected var _comboBox:ComboBox;
+			
+//			private var heightPercentWatcher:ChangeWatcher;
+//			
+//			private var widthPercentWatcher:ChangeWatcher;
+			
+			public function init():void
+			{
+//					if(widthPercentWatcher!=null)
+//					{
+//						widthPercentWatcher.unwatch();
+//					}
+//					if(heightPercentWatcher!=null)
+//					{
+//						heightPercentWatcher.unwatch();
+//					}
+//					widthPercentWatcher = BindingUtils.bindSetter(setWidthPercent,widthPercent,"text");
+//					heightPercentWatcher = BindingUtils.bindSetter(setHeightPercent,heightPercent,"text");
+				
+			}
+			
+//			private function setHeightPercent(txt:String):void
+//			{
+//				_comboBox.percentHeight = Number(txt);
+//				
+//			}
+//			
+//			private function setWidthPercent(txt:String):void
+//			{
+//				_comboBox.percentWidth = Number(txt);
+//			}			
+			
+//			override public function set cell(gi:GridItem):void
+//			{
+//				super.cell = gi;
+//				comboBox = gi.getChildAt(0) as ComboBox;
+//				
+//			}
+
+			
+			override public function set kotformsUiComponent(uiComp:UIComponent):void
+			{
+				super.kotformsUiComponent=uiComp;
+				var comboBox:ComboBox = uiComp as ComboBox;
+				if(comboBox!=null)
+				{
+					if(comboBox.dataProvider==null)
+					{
+						
+						comboBox.dataProvider = new ArrayCollection();
+
+											
+					}
+					comboBox.labelField = "picklabel";		
+					
+					pickData = comboBox.dataProvider as ArrayCollection;
+					uiControlName = comboBox.name;
+				}
+			}
+			
+//			public function get comboBox():ComboBox
+//			{
+//				return _comboBox;
+//			}
+		]]>
+	</mx:Script>
+	
+	<mx:Binding source="uiControlName" destination="kotformsUiComponent.name"/>
+	
+</DropdownDesigner>

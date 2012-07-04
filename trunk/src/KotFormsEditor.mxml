@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:formsui="eduerp.forms.ui.*"
+	xmlns:kotforms="kotforms.*" layout="vertical" initialize="init()">
+	<!-- T.G Raghuraman-->
+	<mx:Script>
+		
+		<![CDATA[
+			import mx.containers.Form;
+			import mx.collections.SortField;
+			import mx.collections.Sort;
+			import mx.events.CollectionEventKind;
+			import mx.events.CollectionEvent;
+			import mx.collections.ArrayCollection;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.http.HTTPService;
+			import mx.containers.GridRow;
+			import flash.utils.getQualifiedClassName;
+			import flash.utils.getDefinitionByName;
+			import mx.utils.ObjectUtil;
+			import mx.core.UIComponent;
+			import mx.containers.GridItem;
+			import mx.events.DragEvent;
+			import mx.managers.DragManager;
+			import mx.core.DragSource;
+			import mx.controls.Label;
+			
+			[Bindable]
+			private var formDefUrl:String;
+			
+			private var formDefService:HTTPService;
+
+			
+			private function init():void
+			{
+				//formDefUrl = "http://localhost:8078/KotForms/appl/formdef.do";
+				
+				formDefUrl = Application.application.parameters.formdefurl as String;	
+		
+				formDefService = new HTTPService();
+				formDefService.resultFormat = 'e4x';
+				formDefService.method = 'POST';
+				formDefService.useProxy = false;
+				formDefService.url = formDefUrl;
+				formDefService.addEventListener(FaultEvent.FAULT,processHttpFaultEvent);
+				
+				//Hack to prevent List from losing items after a drag from it
+				var arc:ArrayCollection = controlsPalette.dataProvider as ArrayCollection;
+				var sort:Sort = new Sort();
+				sort.fields = [new SortField("order",true,false,true)];
+				arc.sort = sort;				
+				arc.addEventListener(CollectionEvent.COLLECTION_CHANGE,function(evt:CollectionEvent):void
+				{
+					if(evt.kind==CollectionEventKind.REMOVE)
+					{
+						if(evt.items.length>0)
+						{
+							for(var i:int;i<evt.items.length;i++)
+							{
+								arc.addItem(evt.items[i]);
+							}
+							arc.refresh();
+						}
+					}
+				});
+				//End Hack
+				
+			}
+			
+			private function processHttpFaultEvent(evt:FaultEvent):void
+			{
+				trace("An error occured while trying to save form definition Xml:");
+				trace(evt.fault.faultString);	
+			}
+			
+
+			
+
+		]]>
+	</mx:Script>
+	<mx:HDividedBox width="100%" height="100%">
+		
+
+				<mx:VBox horizontalAlign="center" height="100%" width="15%" backgroundColor="white">
+					<!--mx:CheckBox label="Checkbox" width="75%" click="iwasSelected('mx.controls.CheckBox')" mouseMove="mouseMoveHandler(event)"/>
+					<mx:ComboBox width="75%" click="iwasSelected('mx.controls.ComboBox')" mouseMove="mouseMoveHandler(event)">
+						<mx:dataProvider>
+							<mx:ArrayCollection>
+								<mx:String>Drop down List</mx:String>
+							</mx:ArrayCollection>
+						</mx:dataProvider>
+					</mx:ComboBox>
+					<mx:RadioButton id="sampleRadioButton" label="RadioButton" selected="true" click="iwasSelected('mx.controls.RadioButton')" mouseMove="mouseMoveHandler(event)"/>
+					<mx:TextInput text="Single Line Text" click="iwasSelected('mx.controls.TextInput')" mouseMove="mouseMoveHandler(event)"/>
+					<mx:TextArea text="Multi-line Text" click="iwasSelected('mx.controls.TextArea')" mouseMove="mouseMoveHandler(event)"/>
+					<mx:DateField click="iwasSelected('mx.controls.DateField')" mouseMove="mouseMoveHandler(event)"/>
+					<formsui:CheckBoxList click="iwasSelected('eduerp.forms.ui.CheckBoxList')" mouseMove="mouseMoveHandler(event)"/>
+					<mx:Form label="Form" borderStyle="solid"  mouseMove="mouseMoveHandler(event)"/-->
+					<mx:List dragEnabled="true" dragMoveEnabled="true" 
+						id="controlsPalette" height="100%" width="100%" labelField="label"
+						textAlign="right">
+						<mx:dataProvider>
+							<mx:ArrayCollection>
+								<mx:Object name="form" label="Form" order="1" clazz="mx.containers.Form"/>
+								<mx:Object name="checkbox" label="CheckBox" order="2" clazz="mx.controls.CheckBox"/>
+								<mx:Object name="combobox" label="ComboBox" order="3" clazz="mx.controls.ComboBox"/>
+								<mx:Object name="radiobutton" label="RadioButton" order="4" clazz="mx.controls.RadioButton"/>
+								<mx:Object name="datefield" label="DateField" order="5" clazz="mx.controls.DateField"/>
+								<mx:Object name="textinput" label="TextInput" order="6" clazz="mx.controls.TextInput"/>
+								<mx:Object name="textarea" label="TextArea" order="7" clazz="mx.controls.TextArea"/>
+								<mx:Object name="checkboxlist" label="MultipleAnswerList" order="8" clazz="eduerp.forms.ui.CheckBoxList"/>
+								<mx:Object name="readonlylist" label="ReadOnly MessageList" order="9" clazz="mx.controls.List"/>
+							</mx:ArrayCollection>
+						</mx:dataProvider>
+					</mx:List>
+				</mx:VBox>
+
+				<kotforms:KotForm width="70%" height="100%"  id="kotformcontainer" 
+					kotformsComponentClicked="handleKotformsComponentClick(event)"
+					kotformsFormSavedEvent="handleKotformsFormSaved(event)">
+					<mx:Script>
+						<![CDATA[
+							import mx.controls.RadioButton;
+							import kotforms.UiPalette;
+							import mx.controls.TextArea;
+							import mx.controls.TextInput;
+							import eduerp.forms.ui.CheckBoxList;
+							import mx.controls.ComboBox;
+							import mx.controls.CheckBox;
+							import kotforms.KotformsEvent;
+							import mx.controls.DateField;
+							
+							private function handleKotformsFormSaved(evt:KotformsEvent):void
+							{
+								if(evt.type==KotformsEvent.KOTFORMS_FORM_SAVED_EVENT)
+								{
+									var formDefXml:XML
+									= evt.data as XML;
+									
+									//saveFormDataRequest.send({"formName":formName,"formDataXml":formDataXml.toXMLString()});
+									formDefService.send({"formName":formDefXml.@name,"formXml":formDefXml.toXMLString()});
+								}
+							}
+							
+							private function handleKotformsComponentClick(evt:KotformsEvent):void
+							{
+								if(evt.type==KotformsEvent.KOTFORMS_COMPONENT_ADDED_EVENT)
+								{
+									var b:UIComponent = evt.kotformsUiComponent;									
+									//dataForDesigner[b]={};
+								}
+								else if(evt.type==KotformsEvent.KOTFORMS_COMPONENT_DELETED_EVENT)
+								{
+									var c:UIComponent = evt.kotformsUiComponent;
+									//delete dataForDesigner.c;
+								}								
+								else if(evt.type==KotformsEvent.KOTFORMS_COMPONENT_CLICKED)
+								{
+									if(evt.kotformsUiComponent is DateField)
+									{
+										designer.selectedChild = dateFieldDesigner;								
+									}
+									else if(evt.kotformsUiComponent is RadioButton)
+									{
+										designer.selectedChild = radioButtonDesigner;
+									}
+									else if(evt.kotformsUiComponent is Label)
+									{
+										designer.selectedChild = labelDesigner;										
+									}
+									else if(evt.kotformsUiComponent is ComboBox)
+									{
+										designer.selectedChild = comboBoxDesigner;
+										
+									}
+									else if(evt.kotformsUiComponent is CheckBoxList)
+									{
+										designer.selectedChild = checkBoxListDesigner;
+									}
+									else
+									{
+										designer.selectedChild = uiComponentDesigner
+									}
+
+									
+									(designer.selectedChild as UiPalette).kotformsUiComponent = evt.kotformsUiComponent;
+								}
+							}
+
+						]]>
+					</mx:Script>
+				</kotforms:KotForm>
+
+				<mx:ViewStack width="15%" height="100%" id="designer">
+					<kotforms:UiComponentDesigner id="uiComponentDesigner"/>
+					<kotforms:CheckBoxListDesigner id="checkBoxListDesigner"/>
+					<kotforms:ComboBoxDesigner id="comboBoxDesigner"/>
+					<kotforms:DateFieldDesigner id="dateFieldDesigner"/>
+					<kotforms:LabelDesigner id="labelDesigner"/>
+					<kotforms:RadioButtonDesigner id="radioButtonDesigner"/>					
+				</mx:ViewStack>
+	</mx:HDividedBox>
+</mx:Application>

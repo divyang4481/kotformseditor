@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Panel xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="100%" height="100%"
+	paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" implements="kotforms.UiPalette"
+	initialize="init()">
+	<mx:Script>
+		<![CDATA[
+			import mx.core.UIComponent;
+			import mx.binding.utils.BindingUtils;
+			import mx.containers.GridItem;
+			import mx.controls.RadioButton;
+			
+			[Bindable]
+			public var radioButton:RadioButton;
+
+			
+			public function init():void
+			{
+//				BindingUtils.bindSetter(horizontalPlacementChanged,horizontalPlacement,"selectedItem");
+//				BindingUtils.bindSetter(verticalPlacementChanged,verticalPlacement,"selectedItem");
+				
+			}
+			
+			public function set kotformsUiComponent(uiComp:UIComponent):void
+			{
+				radioButton = uiComp as RadioButton;
+			}
+			
+			public function get kotformsUiComponent():UIComponent
+			{
+				return radioButton;
+			}
+			
+			private function getRadioButtonName(rdoBtn:RadioButton):String
+			{
+				return rdoBtn.name;
+			}
+			
+			private function getRadioButtonGroup(rdoBtn:RadioButton):String
+			{
+				return rdoBtn.groupName;
+			}
+			
+			/* For now, RadioButton's value property is a string. In the future, this designer can be modified so that radio button value can be edited
+				as an object. 
+			 * */
+			private function getRadioButtonValue(rdoBtn:RadioButton):String
+			{
+				return String(rdoBtn.value);
+			}
+			
+//			private function verticalPlacementChanged(newVal:String):void
+//			{
+//				if(_cell!=null)
+//				{
+//					_cell.setStyle("verticalAlign",newVal);
+//				}
+//			}
+//			
+//			private function horizontalPlacementChanged(newVal:String):void
+//			{
+//				if(_cell!=null)
+//				{
+//					_cell.setStyle("horizontalAlign",newVal);
+//				}
+//			}
+//			
+//			private function getHorizontalPlacementIndex(gi:GridItem):int
+//			{
+//				var horStyle:String
+//				= gi.getStyle("horizontalAlign");
+//				var ndx:int = 0;
+//				if(horStyle=="center")
+//				{
+//					ndx = 0;
+//				}
+//				else if(horStyle=="left")
+//				{
+//					ndx = 1;	
+//				}
+//				else if(horStyle=="right")
+//				{
+//					ndx = 2;
+//				}
+//				
+//				return ndx;
+//			}
+//			
+//			private function getVerticalPlacementIndex(gi:GridItem):int
+//			{
+//				var verStyle:String
+//				= gi.getStyle("verticalAlign");
+//				
+//				var ndx:int = 0;
+//				
+//				if(verStyle=="middle")
+//				{
+//					ndx = 0;
+//				}
+//				else if(verStyle=="top")
+//				{
+//					ndx = 1;
+//				}
+//				else if(verStyle=="bottom")
+//				{
+//					ndx = 2;
+//				}
+//				
+//				return ndx;
+//			}			
+		]]>
+	</mx:Script>
+	
+	<mx:Binding source="radioButtonName.text" destination="radioButton.name"/>
+	<mx:Binding source="radioButtonGrp.text" destination="radioButton.groupName"/>
+	<mx:Binding source="radioButtonVal.text" destination="radioButton.value"/>
+	
+	<mx:Form paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0">
+		<mx:FormItem label="Name">
+			<mx:TextInput id="radioButtonName" width="50%" text="{getRadioButtonName(radioButton)}"/>
+		</mx:FormItem>
+		<mx:FormItem label="RadioButton group">
+			<mx:TextInput id="radioButtonGrp" width="50%" text="{getRadioButtonGroup(radioButton)}"/>
+		</mx:FormItem>
+		<mx:FormItem label="RadioButton value">			
+			<mx:TextInput id="radioButtonVal" width="50%" text="{getRadioButtonValue(radioButton)}"/>
+		</mx:FormItem>
+		<!--mx:FormItem label="Horizontal Placement">
+			<mx:ComboBox id="horizontalPlacement" selectedIndex="{getHorizontalPlacementIndex(_cell)}">
+				<mx:dataProvider>
+					<mx:ArrayCollection>
+						<mx:String>center</mx:String>
+						<mx:String>left</mx:String>
+						<mx:String>right</mx:String>
+					</mx:ArrayCollection>
+				</mx:dataProvider>
+			</mx:ComboBox>
+		</mx:FormItem>
+		<mx:FormItem label="Vertical Placement">
+			<mx:ComboBox id="verticalPlacement" selectedIndex="{getVerticalPlacementIndex(_cell)}">
+				<mx:dataProvider>
+					<mx:ArrayCollection>
+						<mx:String>middle</mx:String>
+						<mx:String>top</mx:String>
+						<mx:String>bottom</mx:String>
+					</mx:ArrayCollection>
+				</mx:dataProvider>
+			</mx:ComboBox>
+		</mx:FormItem-->			
+	</mx:Form>
+</mx:Panel>

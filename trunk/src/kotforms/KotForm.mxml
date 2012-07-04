@@ -1,0 +1,724 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Panel xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="100%" height="100%" title="{formTitle.text}" initialize="init()">
+	<mx:HBox width="100%" height="10%" horizontalAlign="center" paddingBottom="0"
+		paddingLeft="0" paddingRight="0" paddingTop="0">
+		<mx:TextInput width="111" id="formTitle" text="Insert Form title"/>
+		<mx:TextInput id="formName" text="undergradapp"/>
+		<mx:Button label="Add Row" click="addCellRow()"/>	
+		<mx:Button label="Save Form" click="saveAsXml()"/>
+		<!--mx:CheckBox label="Advanced.." selected="false" id="advancedOptions" click="showOptions()"/-->
+		<mx:Button id="advancedOptions" label="Advanced.." click="showOptions()"/>
+	</mx:HBox>
+	<mx:Metadata>
+		[Event(name="kotformsComponentClicked",type="kotforms.KotformsEvent")]
+		[Event(name="kotformsComponentContextMenuClicked",type="kotforms.KotformsEvent")]
+		[Event(name="kotformsFormSavedEvent",type="kotforms.KotformsEvent")]
+		[Event(name="kotformsComponentAddedEvent",type="kotforms.KotformsEvent")]
+		[Event(name="kotformsComponentDeletedEvent",type="kotforms.KotormsEvent")]
+	</mx:Metadata>
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.List;
+			import flash.utils.getDefinitionByName;
+			import mx.binding.utils.BindingUtils;
+			import eduerp.forms.ui.TreeWalker;
+			import mx.controls.Label;
+			import mx.controls.DateField;
+			import mx.controls.TextArea;
+			import mx.controls.ComboBox;
+			import eduerp.forms.ui.CheckBoxList;
+			import mx.controls.CheckBox;
+			import mx.core.Application;
+			import mx.events.CollectionEvent;
+			import mx.core.Container;
+			import mx.controls.LinkButton;
+			import mx.controls.Spacer;
+			import mx.controls.Button;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import mx.containers.TitleWindow;
+			import flash.utils.getQualifiedClassName;
+			import mx.events.IndexChangedEvent;
+			import mx.containers.VBox;
+			import mx.containers.FormItem;
+			import mx.containers.FormHeading;
+			import mx.containers.Form;
+			import mx.containers.HBox;
+			import mx.controls.RadioButton;
+			import mx.events.ItemClickEvent;
+			import mx.core.UIComponent;
+			import mx.managers.DragManager;
+			import mx.events.DragEvent;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import mx.collections.ArrayCollection;
+			
+			private var reloadAfterSave:Boolean;
+			
+			private var reloadWithSaveUrl:Boolean;
+			
+			private var reloadWithLoadUrl:Boolean;
+			
+			private var disableScreenAfterSave:Boolean;
+			
+			private var disableScreenAfterLoad:Boolean;
+			
+			private var navigateAfterSave:String;
+		
+			private function init():void
+			{
+			}
+			
+			private function showOptions():void			
+			{
+			
+						var myWin:TitleWindow
+						= new TitleWindow();
+						myWin.showCloseButton = true;
+						myWin.addEventListener(CloseEvent.CLOSE,function(event:CloseEvent):void{
+							PopUpManager.removePopUp(myWin);
+						});
+						myWin.layout="vertical";
+						
+						var reloadAfterSaveChk:CheckBox = new CheckBox();
+						reloadAfterSaveChk.label = "Reload After Save";
+						reloadAfterSaveChk.selected = reloadAfterSave;
+						reloadAfterSaveChk.addEventListener(MouseEvent.CLICK,function(event:MouseEvent):void
+						{
+							reloadAfterSave = reloadAfterSaveChk.selected;
+						});
+						myWin.addChild(reloadAfterSaveChk);
+
+								
+						var reloadWithSaveUrlRdo:RadioButton  = new RadioButton();
+						reloadWithSaveUrlRdo.label = "Reload With Save Url";
+						reloadWithSaveUrlRdo.groupName ="reloadmethodtype";
+						reloadWithSaveUrlRdo.selected = reloadWithSaveUrl;
+						
+						reloadWithSaveUrlRdo.addEventListener(MouseEvent.CLICK,function(event:MouseEvent):void
+						{
+							reloadWithSaveUrl = (event.target as RadioButton).selected;
+							if(reloadWithSaveUrl)
+							{
+								reloadWithLoadUrl = false;
+							}
+						});
+						myWin.addChild(reloadWithSaveUrlRdo);
+						
+						BindingUtils.bindProperty(reloadWithSaveUrlRdo,"enabled",reloadAfterSaveChk,"selected");
+						
+						var reloadWithLoadUrlRdo:RadioButton = new RadioButton();
+						reloadWithLoadUrlRdo.label = "Reload With Load Url";
+						reloadWithLoadUrlRdo.groupName = "reloadmethodtype";
+						reloadWithLoadUrlRdo.selected = reloadWithLoadUrl;
+						reloadWithLoadUrlRdo.addEventListener(MouseEvent.CLICK,function(event:MouseEvent):void
+						{
+							reloadWithLoadUrl = (event.target as RadioButton).selected;
+							if(reloadWithLoadUrl)
+							{
+								reloadWithSaveUrl = false;
+							}
+							
+						});
+						myWin.addChild(reloadWithLoadUrlRdo);
+						
+						BindingUtils.bindProperty(reloadWithLoadUrlRdo,"enabled",reloadAfterSaveChk,"selected");
+						
+						
+						var noReloadRdo:RadioButton = new RadioButton();
+						noReloadRdo.label = "Turn Off Reload After Save";
+						noReloadRdo.groupName = "reloadmethodtype";
+						noReloadRdo.selected = !(reloadWithSaveUrl || reloadWithLoadUrl);	
+						noReloadRdo.addEventListener(MouseEvent.CLICK,function(event:MouseEvent):void
+						{
+							if((event.target as RadioButton).selected)
+							{
+								reloadWithSaveUrl = false;
+								reloadWithLoadUrl = false;
+							}
+						});
+						
+						var disableScreenAfterSaveChk:CheckBox = new CheckBox();
+						disableScreenAfterSaveChk.label = "Disable Screen After Save";
+						disableScreenAfterSaveChk.selected = disableScreenAfterSave;						
+						disableScreenAfterSaveChk.addEventListener(MouseEvent.CLICK,function(evt:MouseEvent):void
+						{
+							disableScreenAfterSave = (evt.target as CheckBox).selected;
+						});
+						myWin.addChild(disableScreenAfterSaveChk);
+						
+						
+						var disableScreenAfterLoadChk:CheckBox = new CheckBox();
+						disableScreenAfterLoadChk.label = "Disable Screen After Load";
+						disableScreenAfterLoadChk.selected = disableScreenAfterLoad;	
+						disableScreenAfterLoadChk.addEventListener(MouseEvent.CLICK,function(evt:MouseEvent):void
+						{
+							disableScreenAfterLoad = (evt.target as CheckBox).selected;
+						});
+						myWin.addChild(	disableScreenAfterLoadChk );			
+						
+						var hbox:HBox = new HBox();
+						hbox.setStyle('paddingTop','0');hbox.setStyle('paddingBottom','0');hbox.setStyle('paddingRight','0');hbox.setStyle('paddingLeft','0');
+						var navigateLbl:Label = new Label();
+						navigateLbl.text = "Navigate After Save Url";
+						var navigateUrl:TextInput = new TextInput();
+						navigateUrl.addEventListener(Event.CHANGE,function(evt:Event):void
+						{
+							navigateAfterSave = (evt.target as TextInput).text;
+						});
+						myWin.addChild(hbox);
+																									
+						PopUpManager.addPopUp(myWin,this,true);
+						PopUpManager.centerPopUp(myWin);
+								
+			}
+			
+			private function addCellRow():void
+			{
+				var gr:GridRow = new GridRow();
+				gr.percentWidth = 100;
+				gr.minHeight=200;
+				
+				for(var i:int=0;i<2;i++)
+				{
+					var gridItem1:GridItem = new GridItem();
+					gridItem1.percentWidth=50;
+					gridItem1.percentHeight=100;
+					if(i==0)
+						gridItem1.setStyle('backgroundColor','yellow');
+					else
+						gridItem1.setStyle('backgroundColor','cyan');
+					gridItem1.addEventListener(DragEvent.DRAG_ENTER,dragEnterHandler);
+					gridItem1.addEventListener(DragEvent.DRAG_DROP,dragDropHandler);
+					
+					
+					var clearFormContextMenuItem:ContextMenuItem
+					= new ContextMenuItem("Clear");
+					clearFormContextMenuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,function(event:ContextMenuEvent):void
+					{
+						var gi:GridItem = event.contextMenuOwner as GridItem;
+						
+						if(gi.getChildren().length>0)
+						{
+							var vBox:VBox = gi.getChildAt(0) as VBox;
+							if(vBox!=null && vBox.getChildren().length>0)
+								vBox.removeChildAt(0);
+						}
+						
+					});
+					
+					var deleteRowContextMenuItem:ContextMenuItem
+					= new ContextMenuItem("Delete Row");
+					deleteRowContextMenuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,function(event:ContextMenuEvent):void
+					{
+						var gi:GridItem = event.contextMenuOwner as GridItem;
+						
+						var gr:GridRow = gi.parent as GridRow;
+						
+						var g:Grid = gr.parent as Grid;
+						
+						if(g!=null)
+						{
+							g.removeChild(gr);
+						}
+					});
+					
+					var pushLeftOnePctContextMenuItem:ContextMenuItem
+					= new ContextMenuItem("Push Divider Left One Percent");
+					pushLeftOnePctContextMenuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,function(event:ContextMenuEvent):void
+					{
+						var gi:GridItem = event.contextMenuOwner as GridItem;
+						
+						var gr:GridRow = gi.parent as GridRow;
+						
+						var giLeft:GridItem = gr.getChildAt(0) as GridItem;
+						var giRight:GridItem = gr.getChildAt(1) as GridItem;
+						
+						giLeft.percentWidth=giLeft.percentWidth-1;
+						giRight.percentWidth=giRight.percentWidth+1;
+					});
+					
+					var pushRightOnePctContextMenuItem:ContextMenuItem
+					= new ContextMenuItem("Push Divider Right One Percent");
+					pushRightOnePctContextMenuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,function(event:ContextMenuEvent):void
+					{
+						var gi:GridItem = event.contextMenuOwner as GridItem;
+						
+						var gr:GridRow = gi.parent as GridRow;
+						
+						var giLeft:GridItem = gr.getChildAt(0) as GridItem;
+						var giRight:GridItem = gr.getChildAt(1) as GridItem;
+						
+						giLeft.percentWidth=giLeft.percentWidth+1;
+						giRight.percentWidth=giRight.percentWidth-1;
+					});					
+					
+					
+					gridItem1.contextMenu = new ContextMenu();
+					gridItem1.contextMenu.hideBuiltInItems();
+					gridItem1.contextMenu.customItems.push(clearFormContextMenuItem);
+					gridItem1.contextMenu.customItems.push(deleteRowContextMenuItem);
+					gridItem1.contextMenu.customItems.push(pushLeftOnePctContextMenuItem);
+					gridItem1.contextMenu.customItems.push(pushRightOnePctContextMenuItem);
+
+					gr.addChild(gridItem1);
+					var vbox1:VBox = new VBox();
+					vbox1.percentWidth=100;
+					vbox1.percentHeight=100;
+					vbox1.minHeight=200
+					vbox1.setStyle('horizontalAlign','right');
+					vbox1.verticalScrollPolicy='none';
+					vbox1.horizontalScrollPolicy='none';
+					vbox1.setStyle('paddingTop','0');vbox1.setStyle('paddingBottom','0');vbox1.setStyle('paddingRight','0');vbox1.setStyle('paddingLeft','0');
+					gridItem1.addChild(vbox1);
+					vbox1.setStyle('borderStyle','solid');
+				}
+				
+				layout4.addChild(gr);
+				validateDisplayList();
+			}
+			
+			private function addTokens(myXml:XML):void
+			{
+				var pi:XML = <tokens/>;
+				myXml.appendChild(pi);
+				
+				//reloadMethod token
+				//whether to reload the screen after saving or 
+				var reloadToken:XML = <token name="reloadMethod" value="false"/>
+				if(reloadAfterSave)
+				{
+					if(reloadWithSaveUrl)
+					{
+						reloadToken.@value="saveurl";
+					}
+					else if(reloadWithLoadUrl)
+					{
+						reloadToken.@value="loadurl";
+					}
+					else
+					{
+						reloadToken.@value = "none";
+					}
+				}
+				pi.appendChild(reloadToken);
+				
+				//disableScreenAfterSave token
+				//disable screen after saving
+				var disableScreenAfterSaveToken
+				:XML = <token name="disableScreenAfterSave" value="false"/>	;			
+				disableScreenAfterSaveToken.@value = disableScreenAfterSave;
+				pi.appendChild(disableScreenAfterSaveToken);
+				
+				//disableScreenAfterLoad token
+				//disable screen upon load
+				var disableScreenAfterLoadToken
+				:XML = <token name="disableScreenAfterLoad" value="false"/>;
+				
+				disableScreenAfterLoadToken.@value = disableScreenAfterLoad;
+				pi.appendChild(disableScreenAfterLoadToken);
+				
+				
+				//disableScreenAfterLoad token		
+				//Url to navigate to after saving
+				var navigateToUrlAfterSaveToken:XML
+				= <token name="navigateAfterSave" value="none"/> 
+				navigateToUrlAfterSaveToken.@value = (navigateAfterSave==null || navigateAfterSave.length==0)?"none":navigateAfterSave;
+				pi.appendChild(navigateToUrlAfterSaveToken);
+								
+			}
+			
+			private function saveAsXml():void
+			{
+				
+				var myXml:XML = <kotform title="" version="0.2"></kotform>;
+				myXml.@title = formTitle.text;
+				myXml.@name = formName.text;				
+				var j:int = 0;
+				
+				addTokens(myXml);
+				
+				
+				TreeWalker.instance().walkDisplayTree(layout4,function(o:Object,token:Object=null):int
+				{
+					var ret:int = 0;
+					
+					
+					
+					if(o.displayObject is GridItem)
+					{
+						ret = 1;//do not process children of Form
+						var gi:GridItem = o.displayObject as GridItem;
+						
+						var formXml:XML = <kotformsection/>;
+						formXml.@kotorder=++j;
+						myXml.appendChild(formXml);
+						if(gi.getChildren().length>0)
+						{
+
+							var vbox:VBox = gi.getChildAt(0) as VBox;
+							
+							var f:Form = (vbox==null || vbox.getChildren().length==0)?null:vbox.getChildAt(0) as Form;
+							
+							formXml.@label = f==null?"":f.label;
+							
+							TreeWalker.instance().walkDisplayTree(f,function(obj:Object,token:Object=null):int
+							{
+								var r:int = 0;
+								
+								if(obj.displayObject is FormItem)
+								{
+									ret = 1;//do not process children of FormItem
+									var fi:FormItem = obj.displayObject as FormItem;
+									if(fi.getChildren().length>0)
+									{
+										var uiObj:UIComponent = fi.getChildAt(0) as UIComponent;
+										var uiXml:XML = null;
+										var pickValXml:XML = null;
+												if(uiObj is CheckBox)
+												{
+													var chk:CheckBox = uiObj as CheckBox;
+													var b:Boolean = chk.selected;
+													name = chk.name;
+													uiXml = <kotcheckbox/>;
+													uiXml.@selected=b;
+													uiXml.@name=name;
+													uiXml.@label=fi.label;
+													formXml.appendChild(uiXml);
+												}									
+												else if(uiObj is CheckBoxList)
+												{
+													var chkBoxList:CheckBoxList = uiObj as CheckBoxList;
+													name = chkBoxList.name;
+													data = chkBoxList.dataProvider as ArrayCollection;
+													uiXml = <kotmultipleselectlist name=""/>;
+													uiXml.@name=name;
+													uiXml.@label = fi.label;
+													if(data!=null && data.length>0)
+													{
+														for(var m:int=0; m<data.length; m++)
+														{
+															var pickVal:ChoicePickData = data.getItemAt(m) as ChoicePickData;
+															pickValXml = <pickvalue/>;
+															pickValXml.@code=pickVal.pickcode;
+															pickValXml.@label = pickVal.picklabel;
+															pickValXml.@selected = pickVal.selected;
+															uiXml.appendChild(pickValXml);
+														}
+														
+													}
+													formXml.appendChild(uiXml);
+												}
+												else if(uiObj is List)
+												{
+													var list:List = uiObj as List;
+													name = list.name;
+													uiXml = <kotmessagelist name="" label=""/>
+													uiXml.@name = name;
+													uiXml.@label = fi.label;
+													formXml.appendChild(uiXml);													
+												}											
+												else if(uiObj is ComboBox)
+												{
+													var cmb:ComboBox = uiObj as ComboBox;
+													var selectedVal:Object = cmb.selectedItem;
+													name = cmb.name;
+													data = cmb.dataProvider as ArrayCollection;
+													uiXml = <kotcombobox selectedcode="" name=""/>;
+													uiXml.@name=name;
+													uiXml.@label = fi.label;
+													if(selectedVal!=null)
+													{
+														uiXml.@selectedcode=selectedVal.pickcode;
+													}												
+													if(data!=null && data.length>0)
+													{
+
+														for(var l:int=0; l<data.length; l++)
+														{
+															pickVal = data.getItemAt(l) as ChoicePickData;
+															var code:String = pickVal.pickcode;
+															var lbl:String = pickVal.picklabel;
+															pickValXml = <pickvalue code="" label=""/>
+															pickValXml.@code=code;
+															pickValXml.@label=lbl;
+															uiXml.appendChild(pickValXml);
+														}
+													}
+													formXml.appendChild(uiXml);
+												}
+												else if(uiObj is RadioButton)
+												{
+													var rdo:RadioButton = uiObj as RadioButton;
+													var selected:Boolean = rdo.selected;
+													var val:String = String(rdo.value);
+													var grpName:String = rdo.groupName;
+													uiXml = <kotradiobutton selected="{selected}" value="" groupname=""/>
+													uiXml.@selected=selected;
+													uiXml.@value=val;
+													uiXml.@groupname=grpName;	
+													uiXml.@name=rdo.name;		
+													uiXml.@label=fi.label;									
+													formXml.appendChild(uiXml);
+												}
+												else if(uiObj is TextArea)
+												{
+													var txtArea:TextArea = uiObj as TextArea;
+													var txtVal:String = txtArea.text;
+													uiXml = <kottextarea text="{txtVal}" name=""/>
+													uiXml.@text=txtVal;
+													uiXml.@name=txtArea.name;
+													uiXml.@label=fi.label;
+													formXml.appendChild(uiXml);
+												}
+												else if(uiObj is TextInput)
+												{
+													var txtFld:TextInput = uiObj as TextInput;
+													var txtInputVal:String = txtFld.text;
+													uiXml = <kottextinput text=""/>
+													uiXml.@name=txtFld.name;
+													uiXml.@text=txtInputVal;
+													uiXml.@label=fi.label;
+													formXml.appendChild(uiXml);
+												}
+												else if(uiObj is DateField)
+												{
+													var dtFld:DateField = uiObj as DateField;
+													var dtFldName:String = dtFld.name;
+													var defaultDt:Date = dtFld.selectedDate;
+													var stDt:String = defaultDt==null?"":defaultDt.toDateString();
+													uiXml = <kotdatefield name="" defaultdate=""/>;
+													uiXml.@name=dtFldName;
+													uiXml.@defaultdate=stDt;
+													uiXml.@label=fi.label;
+													formXml.appendChild(uiXml);
+												}
+												else if(uiObj is LinkButton)
+												{
+													uiXml=<kotlink name="" text="link button" url=""/>
+													uiXml.@label=fi.label;
+													formXml.appendChild(uiXml);
+												}
+												else if(uiObj is Label)
+												{
+													var uiLbl:Label = uiObj as Label;
+													var txt:String = uiLbl.text;
+													uiXml = <kotlabel text="{txt}"/>
+													uiXml.@text=txt;
+													uiXml.@label=fi.label
+													formXml.appendChild(uiXml);
+												}
+									}
+	
+								}
+							
+								return r;
+							});
+						
+						}
+						
+					}
+					
+					return ret;
+				});
+				
+				var evt:KotformsEvent = new KotformsEvent(KotformsEvent.KOTFORMS_FORM_SAVED_EVENT);
+				evt.data = myXml;
+				dispatchEvent(evt);
+				trace(myXml.toXMLString());
+			}
+			
+			
+			private function shouldAccept_v2(event:DragEvent):Boolean
+			{
+				
+				var gi:GridItem = event.currentTarget as GridItem;
+				var vbox:VBox = gi.getChildren().length>0?(gi.getChildAt(0) as VBox):null;
+				var numVBoxChildren:int = vbox==null?0:vbox.getChildren().length;
+				
+				var b:Boolean = event.dragSource.hasFormat("items") && vbox!=null;
+				
+				if(b)
+				{
+					var itemsArray:Array = event.dragSource.dataForFormat("items") as Array;
+					
+					b = itemsArray.length>0 
+						&& (	
+								(itemsArray[0].name=="form" && numVBoxChildren==0)
+							||	
+								(numVBoxChildren>0 && vbox.getChildAt(0) is Form && itemsArray[0].name!="form")
+							);
+				}
+				
+				
+				return b;
+			}
+			
+			private function addToCell_v2(event:DragEvent):void
+			{
+				var items:Array = event.dragSource.dataForFormat("items") as Array;
+				var data:Class = getDefinitionByName(items[0].clazz) as Class;
+				var gi:GridItem = event.currentTarget as GridItem;
+				var displayObj:UIComponent = new data();
+
+				var form:Form = null;
+				var vbox:VBox = gi.getChildAt(0) as VBox;
+				var hbox:HBox = null;
+				if(data==mx.containers.Form)
+				{
+					form = displayObj as Form;
+					form.percentHeight=100;
+					form.percentWidth=100;					
+					form.verticalScrollPolicy="none";
+					form.horizontalScrollPolicy="none";
+					form.setStyle('paddingTop','0'); form.setStyle('paddingBottom','0');form.setStyle('paddingLeft','0');form.setStyle('paddingRight','0');
+				
+					var formHeading:FormHeading = new FormHeading();
+					formHeading.label = "Edit me";
+					formHeading.addEventListener(MouseEvent.CLICK,function(event:MouseEvent):void
+					{
+						var myWin:TitleWindow
+						= new TitleWindow();
+						myWin.showCloseButton = true;
+						myWin.addEventListener(CloseEvent.CLOSE,function(event:CloseEvent):void{
+							PopUpManager.removePopUp(myWin);
+						});
+						myWin.layout="horizontal";
+								
+						var txt:TextInput = new TextInput();
+						myWin.addChild(txt);		
+								
+						var okBtn:Button = new Button();
+						okBtn.label= "Ok";
+						okBtn.addEventListener(MouseEvent.CLICK,function(event:Event):void
+						{
+							formHeading.label = txt.text;
+							PopUpManager.removePopUp(myWin);
+						});
+						myWin.addChild(okBtn);
+						
+						PopUpManager.addPopUp(myWin,formHeading,true);
+						PopUpManager.centerPopUp(myWin);		
+						
+					});
+					form.addChild(formHeading);			
+					vbox.addChild(form);
+				}
+				else
+				{
+					form = vbox.getChildAt(0) as Form;
+				
+					var formItem:FormItem = new FormItem();
+					formItem.direction="horizontal";
+					formItem.label = "Label for";
+					formItem.addChild(displayObj);
+					
+					var displayObjContextMenuItem:ContextMenuItem 
+					= new ContextMenuItem("Widget Properties");
+					
+					displayObjContextMenuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,displayObjContextMenuHandler);
+					displayObj.contextMenu = new ContextMenu();
+					displayObj.contextMenu.hideBuiltInItems();
+					displayObj.contextMenu.customItems.push(displayObjContextMenuItem);
+					
+					displayObj.addEventListener(MouseEvent.CLICK,function(event:MouseEvent):void
+					{
+						trace("Display Object was clicked. bubbles = "+event.bubbles);
+						
+						var kotformsEvt:KotformsEvent 
+						= new KotformsEvent(KotformsEvent.KOTFORMS_COMPONENT_CLICKED,true,true);
+						kotformsEvt.kotformsUiComponent = displayObj;
+						dispatchEvent(kotformsEvt);
+						
+					},false,0,false);
+
+
+					var delBtn:LinkButton = new LinkButton();
+					delBtn.label="Delete";
+					delBtn.addEventListener(MouseEvent.CLICK,function(evt:MouseEvent):void
+					{
+						form.removeChild(formItem);
+						
+						var kevent:KotformsEvent = new KotformsEvent(KotformsEvent.KOTFORMS_COMPONENT_DELETED_EVENT);
+						kevent.kotformsUiComponent = displayObj;
+						dispatchEvent(kevent);
+					});
+					formItem.addChild(delBtn);
+					
+					var initialHeight:int = form.height;			
+					form.addChild(formItem);
+					var finalHeight:int = form.height;
+					height+=(finalHeight-initialHeight)+1;
+					
+					formItem.itemLabel.addEventListener(MouseEvent.CLICK,function(event:MouseEvent):void
+					{
+						var myWin:TitleWindow
+						= new TitleWindow();
+						myWin.showCloseButton = true;
+						myWin.addEventListener(CloseEvent.CLOSE,function(event:CloseEvent):void{
+							PopUpManager.removePopUp(myWin);
+						});
+						myWin.layout="horizontal";
+								
+						var txt:TextInput = new TextInput();
+						myWin.addChild(txt);		
+								
+						var okBtn:Button = new Button();
+						okBtn.label= "Ok";
+						okBtn.addEventListener(MouseEvent.CLICK,function(event:Event):void
+						{
+							formItem.label = txt.text;
+							PopUpManager.removePopUp(myWin);
+						});
+						myWin.addChild(okBtn);
+						
+						PopUpManager.addPopUp(myWin,formItem,true);
+						PopUpManager.centerPopUp(myWin);		
+					});
+					
+					var kevt:KotformsEvent = new KotformsEvent(KotformsEvent.KOTFORMS_COMPONENT_ADDED_EVENT);
+					kevt.kotformsUiComponent = displayObj;
+					dispatchEvent(kevt);
+				}
+				
+			}
+			
+			
+			private function displayObjContextMenuHandler(event:ContextMenuEvent):void
+			{
+					var kotformsEvt:KotformsEvent 
+					= new KotformsEvent(KotformsEvent.KOTFORMS_COMPONENT_CONTEXTMENUCLICKED,true,true);
+					kotformsEvt.kotformsUiComponent = event.contextMenuOwner as UIComponent;
+					dispatchEvent(kotformsEvt);				
+			}
+			
+			private function dragEnterHandler(event:DragEvent):void
+			{
+				var b:Boolean = shouldAccept_v2(event);
+
+				if(b)
+				{
+						DragManager.acceptDragDrop(event.currentTarget as UIComponent);					
+				}
+			}
+			
+			
+			private function dragDropHandler(event:DragEvent):void
+			{
+				trace("Entered dragDropHandler");
+					
+				addToCell_v2(event);
+				
+				trace("Exited dragDropHandler");
+			}
+
+			
+		]]>
+	</mx:Script>
+
+		<mx:Grid width="100%" height="100%" id="layout4">
+
+		</mx:Grid>
+
+
+</mx:Panel>
